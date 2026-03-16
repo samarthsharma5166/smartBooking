@@ -22,15 +22,15 @@ jobs:
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           envs: PRODUCTION_ENV
           script: |
-            cd /root/smartBooking
+            cd ~/smartBooking
             git pull origin main
             
             # Securely write the environment variables to the backend's .env file
             echo "$PRODUCTION_ENV" > backend/.env
             
             # Rebuild and start the containers
-            cd /root/smartBooking/backend
+            cd ~/smartBooking/backend
             docker compose up -d --build
             
-            cd /root/smartBooking/frontend
+            cd ~/smartBooking/frontend
             docker compose up -d --build

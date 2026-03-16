@@ -1,0 +1,10 @@
+services:
+  frontend:
+    build: .
+    container_name: appointment-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    # Optional: if you need to pass environment variables during build or runtime
+    # env_file:
+    #   - .env

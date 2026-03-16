@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  appointment-backent:
+    build: .
+    container_name: appointment-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    

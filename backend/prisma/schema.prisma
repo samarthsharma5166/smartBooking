@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  phone        String?
+  createdAt    DateTime      @default(now())
+
+  appointments Appointment[]
+}
+
+model Doctor {
+  id        String   @id @default(uuid())
+  name      String
+  fee       Int      // consultation fee
+  email   String
+  minAdvanceMinutes Int  // e.g. 120 = must book at least 2 hours before
+  maxAdvanceDays    Int  // e.g. 7 = cannot book more than 7 days ahead
+  doctorBlock    DoctorBlock[]
+  appointments   Appointment[]
+  password   String
+  sessionTypes  SessionType[]
+  // googleCalendar GoogleCalendar?
+  accessToken   String? @db.VarChar(1000)
+  refreshToken  String? @db.VarChar(1000)
+  expiryDate    BigInt?
+  createdAt DateTime @default(now())
+}
+
+model SessionType {
+  id        String   @id @default(uuid())
+  name      String
+  duration  Int // in minutes
+  title     String
+  sub       String
+  note      String
+  fee       Int
+  doctorId  String
+  doctor    Doctor   @relation(fields: [doctorId], references: [id])
+  appointments Appointment[]
+
+  @@index([doctorId])
+}
+
+model Appointment {
+  id        String   @id @default(uuid())
+
+  userId    String
+  doctorId  String
+  sessionTypeId String?
+
+  /// Date only (00:00 UTC)
+  date      DateTime
+
+  /// Minutes from midnight
+  startTime Int
+  endTime   Int
+  googleCalendarEventId String?
+  meetLink String?
+
+  status    AppointmentStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+
+  payment   Payment?
+
+  user      User     @relation(fields: [userId], references: [id])
+  doctor    Doctor   @relation(fields: [doctorId], references: [id])
+  sessionType SessionType? @relation(fields: [sessionTypeId], references: [id])
+
+  @@index([doctorId, date])
+}
+
+model DoctorBlock {
+  id        String   @id @default(uuid())
+
+  doctorId  String
+
+  /// Date only (00:00 UTC)
+  date      DateTime
+
+  /// Minutes from midnight
+  startTime Int
+  endTime   Int
+
+  reason    String?
+  createdAt DateTime @default(now())
+
+  doctor    Doctor   @relation(fields: [doctorId], references: [id])
+
+  @@index([doctorId, date])
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  txnId       String   @unique
+  amount      Int
+  status      PaymentStatus
+  method      String?
+  error       String?
+
+  appointmentId   String @unique
+  appointment     Appointment     @relation(fields: [appointmentId], references: [id])
+
+  createdAt   DateTime @default(now())
+}
+
+
+model NotificationLog {
+  id            String   @id @default(uuid())
+  appointmentId String
+  type          NotificationType
+  sentAt        DateTime @default(now())
+
+  @@index([appointmentId])
+}
+
+enum AppointmentStatus {
+  CONFIRMED
+  PENDING
+  CANCELLED
+}
+
+enum NotificationType {
+  INSTANT
+  ONE_DAY_BEFORE
+  TWO_HOURS_BEFORE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}

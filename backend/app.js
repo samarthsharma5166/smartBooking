@@ -15,7 +15,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: ["http://localhost:5173", "https://4v1gfcbl-5173.inc1.devtunnels.ms", "http://localhost:4173"],
+    origin: ["http://localhost:5173", "https://booking.inspiredliving.in", "http://localhost:4173"],
     credentials: true
 }));
 

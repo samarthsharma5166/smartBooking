@@ -1,0 +1,35 @@
+name: Deploy Node.js Application to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Hostinger
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          PRODUCTION_ENV: ${{ secrets.PRODUCTION_ENV }}
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          envs: PRODUCTION_ENV
+          script: |
+            cd /root/smartBooking
+            git pull origin main
+            
+            # Securely write the environment variables to the backend's .env file
+            echo "$PRODUCTION_ENV" > backend/.env
+            
+            # Rebuild and start the containers
+            cd /root/smartBooking/backend
+            docker compose up -d --build
+            
+            cd /root/smartBooking/frontend
+            docker compose up -d --build

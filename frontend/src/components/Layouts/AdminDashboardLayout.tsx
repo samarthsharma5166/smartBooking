@@ -81,8 +81,11 @@ const AdminDashboardLayout = () => {
         }
     }
 
+    // function ConnectToGoogleCalendar() {
+    //     window.location.href = "http://localhost:3000/api/v1/google/auth";
+    // }
     function ConnectToGoogleCalendar() {
-        window.location.href = "http://localhost:3000/api/v1/google/auth";
+        window.location.href = "https://api.booking.inspiredliving.in/api/v1/google/auth";
     }
     useEffect(() => {
         const token = JSON.parse(localStorage.getItem("isLoggedIn")!);

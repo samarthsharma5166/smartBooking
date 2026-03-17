@@ -70,15 +70,25 @@ export const getAvailableSlots = async (req, res, next) => {
 
         const busyTimes = await googleCalendar.getBusyTimes(req, res, next);
         const googleBusySlots = busyTimes.map(busy => {
-            const start = new Date(busy.start);
-            const end = new Date(busy.end);
+            const startStr = busy.start;
+            const endStr = busy.end;
+            
+            // Extract HH:mm directly from the ISO string to avoid Date object timezone shifts
+            // Format is "2023-10-25T09:00:00+05:30" or similar
+            const startHour = parseInt(startStr.substring(11, 13));
+            const startMin = parseInt(startStr.substring(14, 16));
+            
+            const endHour = parseInt(endStr.substring(11, 13));
+            const endMin = parseInt(endStr.substring(14, 16));
+
             return {
-                start: start.getHours() * 60 + start.getMinutes(),
-                end: end.getHours() * 60 + end.getMinutes(),
+                start: startHour * 60 + startMin,
+                end: endHour * 60 + endMin,
             };
         }).filter(slot => {
+            if (!busyTimes[0]) return false;
             const slotDate = new Date(busyTimes[0].start);
-            return slotDate.toDateString() === selectedDate.toDateString();
+            return true; // The query already limits it to selectedDate + maxAdvanceDays
         });
 
         const normalizedGoogleBusySlots = googleBusySlots.map(slot => {
@@ -195,13 +205,20 @@ export const getBlockSlots = async (req, res, next) => {
         // })
         const event = await googleCalendar.eventList(start, end);
         const googleBusySlots = event.map(busy => {
-            const start = new Date(busy.start.dateTime);
-            const end = new Date(busy.end.dateTime);
+            const startStr = busy.start.dateTime;
+            const endStr = busy.end.dateTime;
+
+            const startHour = parseInt(startStr.substring(11, 13));
+            const startMin = parseInt(startStr.substring(14, 16));
+            
+            const endHour = parseInt(endStr.substring(11, 13));
+            const endMin = parseInt(endStr.substring(14, 16));
+
             return {
                 type: busy.summary,
-                date: start.getDate(),
-                start: start.getHours() * 60 + start.getMinutes(),
-                end: end.getHours() * 60 + end.getMinutes(),
+                date: new Date(startStr).getDate(),
+                start: startHour * 60 + startMin,
+                end: endHour * 60 + endMin,
             };
         })
 

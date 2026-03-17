@@ -164,12 +164,12 @@ export const createEvent = async (summary, startTime, endTime,token) => {
   const event = {
     summary,
     start: {
-      dateTime: new Date(startTime).toISOString(),
-      timeZone: 'UTC',
+      dateTime: new Date(startTime).toISOString().replace('Z', '+05:30'),
+      timeZone: 'Asia/Kolkata',
     },
     end: {
-      dateTime: new Date(endTime).toISOString(),
-      timeZone: 'UTC',
+      dateTime: new Date(endTime).toISOString().replace('Z', '+05:30'),
+      timeZone: 'Asia/Kolkata',
     },
     conferenceData: {
       createRequest: {

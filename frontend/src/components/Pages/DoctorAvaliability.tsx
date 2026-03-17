@@ -924,18 +924,22 @@ const DoctorAvailability = () => {
       const res = await axiosInstance.get("/doctor/blocks", { params: { start, end } })
       console.log(res.data[0])
       const formatted = res.data.map((item: any) => {
+        // Build the timezone-agnostic local string format FullCalendar wants: YYYY-MM-DDTHH:mm:00
         const year = new Date(start).getFullYear()
-        const month = new Date(start).getMonth()
-        const eventDate = new Date(year, month, item.date)
-        const startDT = new Date(eventDate)
-        startDT.setMinutes(item.start)
-        const endDT = new Date(eventDate)
-        endDT.setMinutes(item.end)
+        const month = String(new Date(start).getMonth() + 1).padStart(2, '0')
+        const day = String(item.date).padStart(2, '0')
+
+        const startH = String(Math.floor(item.start / 60)).padStart(2, '0')
+        const startM = String(item.start % 60).padStart(2, '0')
+        
+        const endH = String(Math.floor(item.end / 60)).padStart(2, '0')
+        const endM = String(item.end % 60).padStart(2, '0')
+
         const colors = EVENT_COLORS[item.type === "BLOCK" ? "BLOCKED" : "AVAILABLE"] || { bg: "#94a3b8", border: "#64748b" }
         return {
           title: item.type,
-          start: startDT.toISOString(),
-          end: endDT.toISOString(),
+          start: `${year}-${month}-${day}T${startH}:${startM}:00`,
+          end: `${year}-${month}-${day}T${endH}:${endM}:00`,
           backgroundColor: colors.bg,
           borderColor: colors.border,
           textColor: "white",

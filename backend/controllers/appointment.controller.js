@@ -65,10 +65,17 @@ export const bookAppointment = async (req, res, next) => {
             return appointment;
         });
 
+        // Convert logic: to properly tell Google Calendar that these times are exactly in IST
+        // Without this, .toISOString() converts local Node time to UTC Z, causing Google to incorrectly apply a +5.5 hour offset.
+        const formatISTISO = (d) => {
+            const pad = (n) => n < 10 ? '0' + n : n;
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00+05:30`;
+        };
+
         const event = await googleCalendar.createEvent(
             `Appointment with ${name}`,
-            startDateTime.toISOString(),
-            endDateTime.toISOString()
+            formatISTISO(startDateTime),
+            formatISTISO(endDateTime)
         );
         const updatedAppointment = await prisma.appointment.update({
             where: { 

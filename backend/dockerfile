@@ -1,6 +1,7 @@
 from node:alpine
 
-RUN apk update && apk add --no-cache openssl
+RUN apk update && apk add --no-cache openssl tzdata
+ENV TZ=Asia/Kolkata
 
 WORKDIR /app
 

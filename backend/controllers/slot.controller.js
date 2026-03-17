@@ -81,8 +81,15 @@ export const getAvailableSlots = async (req, res, next) => {
             return slotDate.toDateString() === selectedDate.toDateString();
         });
 
+        const normalizedGoogleBusySlots = googleBusySlots.map(slot => {
+            return {
+                start: slot.start,
+                end: slot.end,
+            };
+        });
+
         // const unavailableSlots = [...blocks, ...appointments, ...googleBusySlots];
-        const unavailableSlots = [...blocks, ...normalizedAppointments, ...normalizedBlocks];
+        const unavailableSlots = [...normalizedAppointments, ...normalizedBlocks, ...normalizedGoogleBusySlots];
 
 
         console.log("Unavaliable___________", unavailableSlots);

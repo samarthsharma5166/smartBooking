@@ -228,34 +228,23 @@ export const getBlockSlots = async (req, res, next) => {
         const googleBusySlots = event.map(busy => {
             if (!busy.start.dateTime) return null;
 
-            const startStr = busy.start.dateTime; // e.g. "2024-01-15T05:40:00Z" or "+05:30"
-            const endStr = busy.end.dateTime;
+            // Parse properly — handles both "Z" and "+05:30" formats
+            const startDate = new Date(busy.start.dateTime)
+            const endDate = new Date(busy.end.dateTime)
 
-            // Convert to IST by parsing as Date and using IST offset
-            const startDate = new Date(startStr);
-            const endDate = new Date(endStr);
+            // Manually shift to IST (UTC+5:30)
+            const IST_OFFSET = 5.5 * 60 * 60 * 1000
+            const istStart = new Date(startDate.getTime() + IST_OFFSET)
+            const istEnd = new Date(endDate.getTime() + IST_OFFSET)
 
-            // toLocaleString with IST gives correct local time regardless of source format
-            const toIST = (d) => {
-                const ist = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
-                // ist is now UTC+0 representation of the IST moment
-                return {
-                    dateStr: ist.toISOString().substring(0, 10),   // "YYYY-MM-DD"
-                    hour: ist.getUTCHours(),
-                    min: ist.getUTCMinutes(),
-                };
-            };
-
-            const s = toIST(startDate);
-            const e = toIST(endDate);
-
+            // Use UTC getters on the shifted date — gives correct IST values
             return {
                 type: busy.summary,
-                date: s.dateStr,          // ← full "YYYY-MM-DD" string, not just the day digit
-                start: s.hour * 60 + s.min,
-                end: e.hour * 60 + e.min,
-            };
-        }).filter(Boolean);
+                date: istStart.toISOString().substring(0, 10),  // "YYYY-MM-DD" in IST
+                start: istStart.getUTCHours() * 60 + istStart.getUTCMinutes(),
+                end: istEnd.getUTCHours() * 60 + istEnd.getUTCMinutes(),
+            }
+        }).filter(Boolean)
         const unavailableSlots = [...googleBusySlots];
         return res.status(200).json(unavailableSlots);
     } catch (error) {

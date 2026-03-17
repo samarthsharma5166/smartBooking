@@ -19,9 +19,9 @@ export const bookAppointment = async (req, res, next) => {
         const endDateTime = combine(date, endTime);
 
         // TODO: Implement a rollback mechanism for the Google Calendar event if the db transaction fails.
-        
 
-        const appointment =   await prisma.$transaction(async tx => {
+
+        const appointment = await prisma.$transaction(async tx => {
             const blockConflict = await tx.doctorBlock.findFirst({
                 where: {
                     doctorId,
@@ -67,20 +67,27 @@ export const bookAppointment = async (req, res, next) => {
 
         // Convert logic: to properly tell Google Calendar that these times are exactly in IST
         // Without this, .toISOString() converts local Node time to UTC Z, causing Google to incorrectly apply a +5.5 hour offset.
-        const formatISTISO = (d) => {
-            const pad = (n) => n < 10 ? '0' + n : n;
-            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00+05:30`;
+        // const formatISTISO = (d) => {
+        //     const pad = (n) => n < 10 ? '0' + n : n;
+        //     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00+05:30`;
+        // };
+
+        const formatISTISO = (dateStr, timeStr) => {
+            // dateStr = "2024-01-15", timeStr = "11:10"
+            return `${dateStr}T${timeStr}:00+05:30`;
+            // → "2024-01-15T11:10:00+05:30" — Google reads this perfectly
         };
+
 
         const event = await googleCalendar.createEvent(
             `Appointment with ${name}`,
-            formatISTISO(startDateTime),
-            formatISTISO(endDateTime)
+            formatISTISO(date, startTime),   // pass raw strings, not Date objects
+            formatISTISO(date, endTime)
         );
         const updatedAppointment = await prisma.appointment.update({
-            where: { 
+            where: {
                 id: appointment.id,
-             },
+            },
             data: {
                 googleCalendarEventId: event.id,
                 meetLink: event.hangoutLink,
@@ -91,9 +98,9 @@ export const bookAppointment = async (req, res, next) => {
 
         const html = `Your meeting link: ${event.hangoutLink}`
 
-        sendEmail(email,"Reminder for appointment",html);
+        sendEmail(email, "Reminder for appointment", html);
         // sendEmail(drEmail,"Reminder for appointment",html);
-        return res.status(201).json({ success:true, message: "Appointment booked successfully", data: updatedAppointment });
+        return res.status(201).json({ success: true, message: "Appointment booked successfully", data: updatedAppointment });
     } catch (err) {
         // TODO: Add logic to delete the Google Calendar event if the transaction fails
         console.error(err);
@@ -106,13 +113,13 @@ export const bookAppointment = async (req, res, next) => {
 export const getAppointments = async (req, res, next) => {
     try {
         const appointments = await prisma.appointment.findMany({
-            where:{
-                status:"CONFIRMED",
+            where: {
+                status: "CONFIRMED",
             },
-            include:{
-                sessionType:true,
-                user:true,
-                payment:true,
+            include: {
+                sessionType: true,
+                user: true,
+                payment: true,
             }
         });
         return res.status(200).json({ success: true, data: appointments });

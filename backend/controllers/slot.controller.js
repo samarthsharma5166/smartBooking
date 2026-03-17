@@ -73,17 +73,16 @@ export const getAvailableSlots = async (req, res, next) => {
             const startStr = busy.start;
             const endStr = busy.end;
             
-            // Extract HH:mm directly from the ISO string to avoid Date object timezone shifts
-            // Format is "2023-10-25T09:00:00+05:30" or similar
-            const startHour = parseInt(startStr.substring(11, 13));
-            const startMin = parseInt(startStr.substring(14, 16));
+            const startDate = new Date(startStr);
+            const endDate = new Date(endStr);
             
-            const endHour = parseInt(endStr.substring(11, 13));
-            const endMin = parseInt(endStr.substring(14, 16));
+            // Convert any timezone to exact IST representations
+            const istStart = new Date(startDate.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+            const istEnd = new Date(endDate.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
 
             return {
-                start: startHour * 60 + startMin,
-                end: endHour * 60 + endMin,
+                start: istStart.getHours() * 60 + istStart.getMinutes(),
+                end: istEnd.getHours() * 60 + istEnd.getMinutes(),
             };
         }).filter(slot => {
             if (!busyTimes[0]) return false;
@@ -202,25 +201,30 @@ export const getBlockSlots = async (req, res, next) => {
         //         start: start.getHours() * 60 + start.getMinutes(),
         //         end: end.getHours() * 60 + end.getMinutes(),
         //     };
-        // })
         const event = await googleCalendar.eventList(start, end);
         const googleBusySlots = event.map(busy => {
+            // Full day events from Google Calendar only have `date` not `dateTime`
+            if (!busy.start.dateTime) return null;
+
             const startStr = busy.start.dateTime;
             const endStr = busy.end.dateTime;
 
-            const startHour = parseInt(startStr.substring(11, 13));
-            const startMin = parseInt(startStr.substring(14, 16));
+            // To safely handle ANY timezone Google throws at us (UTC, IST, EST), 
+            // convert the official exact JS Date object strongly into the IST timezone context
+            const startDate = new Date(startStr);
+            const endDate = new Date(endStr);
             
-            const endHour = parseInt(endStr.substring(11, 13));
-            const endMin = parseInt(endStr.substring(14, 16));
+            // Convert to IST safely
+            const istStart = new Date(startDate.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+            const istEnd = new Date(endDate.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
 
             return {
                 type: busy.summary,
-                date: new Date(startStr).getDate(),
-                start: startHour * 60 + startMin,
-                end: endHour * 60 + endMin,
+                date: istStart.getDate(),
+                start: istStart.getHours() * 60 + istStart.getMinutes(),
+                end: istEnd.getHours() * 60 + istEnd.getMinutes(),
             };
-        })
+        }).filter(Boolean);
 
         const unavailableSlots = [...googleBusySlots];
         return res.status(200).json(unavailableSlots);

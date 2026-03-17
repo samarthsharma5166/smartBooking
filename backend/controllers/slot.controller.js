@@ -72,17 +72,18 @@ export const getAvailableSlots = async (req, res, next) => {
         const googleBusySlots = busyTimes.map(busy => {
             const startStr = busy.start;
             const endStr = busy.end;
+
+            // Extract HH:mm directly from the ISO string to avoid Date object timezone shifts
+            // Format is "2023-10-25T09:00:00+05:30" or similar
+            const startHour = parseInt(startStr.substring(11, 13));
+            const startMin = parseInt(startStr.substring(14, 16));
             
-            const startDate = new Date(startStr);
-            const endDate = new Date(endStr);
-            
-            // Convert any timezone to exact IST representations
-            const istStart = new Date(startDate.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
-            const istEnd = new Date(endDate.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+            const endHour = parseInt(endStr.substring(11, 13));
+            const endMin = parseInt(endStr.substring(14, 16));
 
             return {
-                start: istStart.getHours() * 60 + istStart.getMinutes(),
-                end: istEnd.getHours() * 60 + istEnd.getMinutes(),
+                start: startHour * 60 + startMin,
+                end: endHour * 60 + endMin,
             };
         }).filter(slot => {
             if (!busyTimes[0]) return false;
@@ -206,23 +207,21 @@ export const getBlockSlots = async (req, res, next) => {
             // Full day events from Google Calendar only have `date` not `dateTime`
             if (!busy.start.dateTime) return null;
 
-            const startStr = busy.start.dateTime;
+            const startStr = busy.start.dateTime; // e.g. "2023-10-25T09:00:00+05:30"
             const endStr = busy.end.dateTime;
 
-            // To safely handle ANY timezone Google throws at us (UTC, IST, EST), 
-            // convert the official exact JS Date object strongly into the IST timezone context
-            const startDate = new Date(startStr);
-            const endDate = new Date(endStr);
+            // Extract HH:mm directly from the ISO string safely, bypassing JS Date timezones
+            const startHour = parseInt(startStr.substring(11, 13));
+            const startMin = parseInt(startStr.substring(14, 16));
             
-            // Convert to IST safely
-            const istStart = new Date(startDate.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
-            const istEnd = new Date(endDate.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+            const endHour = parseInt(endStr.substring(11, 13));
+            const endMin = parseInt(endStr.substring(14, 16));
 
             return {
                 type: busy.summary,
-                date: istStart.getDate(),
-                start: istStart.getHours() * 60 + istStart.getMinutes(),
-                end: istEnd.getHours() * 60 + istEnd.getMinutes(),
+                date: parseInt(startStr.substring(8, 10)),
+                start: startHour * 60 + startMin,
+                end: endHour * 60 + endMin,
             };
         }).filter(Boolean);
 

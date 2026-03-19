@@ -295,7 +295,7 @@ const DoctorSettings = () => {
     const handleGoogleDisconnect = async () => {
         setGoogleSave("saving")
         try {
-            await axiosInstance.post("/doctor/google/disconnect")
+            await axiosInstance.patch("/doctor/google/disconnect")
             setGoogleConnected(false)
             setGoogleSave("idle")
         } catch {

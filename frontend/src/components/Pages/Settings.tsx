@@ -307,7 +307,7 @@ const DoctorSettings = () => {
     const SaveAdvanceSettings = async() =>{
         setAdvanceSettingSave("saving")
         try{
-            const res = await axiosInstance.patch("/doctor/updateAdvanceSettings", profile)
+             await axiosInstance.patch("/doctor/updateAdvanceSettings", profile)
             setAdvanceSettingSave("success")
             setAdvanceSettingMsg("Advance settings updated successfully.")
         }catch(error: any){

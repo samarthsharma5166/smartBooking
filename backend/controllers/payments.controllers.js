@@ -12,12 +12,25 @@ export const getPayment = async (req, res, next) => {
         const { date, startTime, whatsapp, endTime, email, name, sessionTypeId } = req.body
         const appointmentDate = new Date(date);
         const doctorId = process.env.DOCTOR_ID;
-        const now = new Date()
+        
+        const now = new Date();
+        now.setHours(0, 0, 0, 0); // Normalize 'today' to start of day
 
-        const todayDate = now.getDate();
+        const normalizedAppointmentDate = new Date(appointmentDate);
+        normalizedAppointmentDate.setHours(0, 0, 0, 0); // Normalize appointment date to start of day
 
-        if(appointmentDate<todayDate){
-            return next(new AppError(`Select a valid fate`, 401));
+        const doctor = await prisma.doctor.findUnique({ where: { id: doctorId } })
+        const advanceBookingDays = doctor.advanceBookingDays;
+
+        const maxDate = new Date(now);
+        maxDate.setDate(now.getDate() + advanceBookingDays);
+
+        if(normalizedAppointmentDate > maxDate){
+            return next(new AppError(`Select a date within ${advanceBookingDays} days from today`, 401));
+        }
+
+        if(normalizedAppointmentDate < now){
+            return next(new AppError(`Select a valid Date`, 401));
         }
 
         const session = await prisma.sessionType.findUnique({

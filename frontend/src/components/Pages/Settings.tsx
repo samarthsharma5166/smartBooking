@@ -25,6 +25,7 @@ import {
     RefreshCw,
     Info,
 } from "lucide-react"
+import { ConnectToGoogleCalendar } from "@/helper/helper"
 
 /* ─────────────────────────────────────────────────────────────────
    Types
@@ -201,16 +202,21 @@ const DoctorSettings = () => {
     const [passwordSave, setPasswordSave] = useState<SaveState>("idle")
     const [passwordMsg, setPasswordMsg] = useState("")
 
+    // advance settings
+    const [advanceSettingSave,setAdvanceSettingSave] = useState<SaveState>("idle")
+    const [advanceSettingMsg,setAdvanceSettingMsg] = useState("")
+
     /* ── Google Calendar state ──────────────────── */
     const [googleConnected, setGoogleConnected] = useState(false)
     const [googleSave, setGoogleSave] = useState<SaveState>("idle")
 
-    /* ── Load profile ───────────────────────────── */
+    /* ── Load profile ✅ ───────────────────────────── */
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await axiosInstance.get("/doctor/profile")
-                const d = res.data
+                const res = await axiosInstance.get("/doctor/me")
+                const d = res.data.doctor
+                console.log(d)
                 setProfile({
                     name: d.name ?? "",
                     email: d.email ?? "",
@@ -226,12 +232,12 @@ const DoctorSettings = () => {
         load()
     }, [])
 
-    /* ── Save profile ───────────────────────────── */
+    /* ── Save profile ✅ ───────────────────────────── */
     const handleSaveProfile = async () => {
         setProfileSave("saving")
         setProfileMsg("")
         try {
-            await axiosInstance.put("/doctor/profile", profile)
+            await axiosInstance.patch("/doctor/update", profile)
             setProfileSave("success")
             setProfileMsg("Profile updated successfully.")
         } catch (error: any) {
@@ -242,7 +248,7 @@ const DoctorSettings = () => {
         }
     }
 
-    /* ── Save password ──────────────────────────── */
+    /* ── Save password ✅──────────────────────────── */
     const handleSavePassword = async () => {
         if (passwords.newPassword !== passwords.confirmPassword) {
             setPasswordSave("error")
@@ -258,7 +264,7 @@ const DoctorSettings = () => {
         }
         setPasswordSave("saving")
         try {
-            await axiosInstance.put("/doctor/password", {
+            await axiosInstance.patch("/doctor/updatePassword", {
                 currentPassword: passwords.currentPassword,
                 newPassword: passwords.newPassword,
             })
@@ -273,12 +279,13 @@ const DoctorSettings = () => {
         }
     }
 
-    /* ── Connect / disconnect Google ────────────── */
+    /* ── Connect / disconnect Google ✅ ────────────── */
     const handleGoogleConnect = async () => {
         setGoogleSave("saving")
         try {
-            const res = await axiosInstance.get("/doctor/google/auth-url")
-            window.location.href = res.data.url
+            // const res = await axiosInstance.get("/doctor/google/auth-url")
+            // window.location.href = res.data.url
+            ConnectToGoogleCalendar()
         } catch {
             setGoogleSave("error")
             setTimeout(() => setGoogleSave("idle"), 3000)
@@ -294,6 +301,20 @@ const DoctorSettings = () => {
         } catch {
             setGoogleSave("error")
             setTimeout(() => setGoogleSave("idle"), 3000)
+        }
+    }
+
+    const SaveAdvanceSettings = async() =>{
+        setAdvanceSettingSave("saving")
+        try{
+            const res = await axiosInstance.patch("/doctor/updateAdvanceSettings", profile)
+            setAdvanceSettingSave("success")
+            setAdvanceSettingMsg("Advance settings updated successfully.")
+        }catch(error: any){
+            console.log(error)
+        }
+        finally{
+            setTimeout(() => setAdvanceSettingSave("idle"), 3500)
         }
     }
 
@@ -316,7 +337,7 @@ const DoctorSettings = () => {
 
     /* ── Render ─────────────────────────────────── */
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100/40 to-sky-50/30 p-5 lg:p-8">
+        <div className="min-h-screen  to-sky-50/30 p-5 lg:p-8">
 
             {/* ── Page header ──────────────────────────── */}
             <div className="flex items-start gap-4 mb-7 p-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
@@ -453,20 +474,28 @@ const DoctorSettings = () => {
                         </div>
                     )}
 
-                    <div className="flex justify-end py-4">
-                        <Button
-                            onClick={handleSaveProfile}
-                            disabled={profileSave === "saving"}
-                            className="
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 py-4">
+                        <SaveFeedback state={advanceSettingSave} message={advanceSettingMsg} />
+                        <div className="sm:ml-auto">
+                            <Button
+                                onClick={SaveAdvanceSettings}
+                                disabled={profileSave === "saving"}
+                                className="
                                 gap-2 bg-sky-600 hover:bg-sky-700 text-white
                                 rounded-lg px-5 h-9 text-sm font-semibold
                                 shadow shadow-sky-200 disabled:opacity-50
                                 transition-all duration-150
                             "
-                        >
-                            <Save className="w-4 h-4" />
-                            Save Preferences
-                        </Button>
+                            >
+
+                                {advanceSettingSave === "saving"
+                                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+                                    : <><Save className="w-4 h-4" />
+                                        Save Preferences</>
+                                }
+                            </Button>
+                        </div>
+                        
                     </div>
                 </Section>
 

@@ -10,3 +10,8 @@ export const formatTime = (minutes: number) => {
   const m = (minutes % 60).toString().padStart(2, "0");
   return `${h}:${m}`;
 };
+
+export function ConnectToGoogleCalendar() {
+  // window.location.href = "https://api.booking.inspiredliving.in/api/v1/google/auth";
+  window.location.href = "http://localhost:3000/api/v1/google/auth";
+}

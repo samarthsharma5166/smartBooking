@@ -21,6 +21,7 @@ import { LuCalendarCheck2 } from "react-icons/lu";
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 import 'sweetalert2/src/sweetalert2.scss'
 import axios from "axios"
+import { ConnectToGoogleCalendar } from "@/helper/helper"
 
 const MenuItem =
     [
@@ -84,9 +85,9 @@ const AdminDashboardLayout = () => {
     // function ConnectToGoogleCalendar() {
     //     window.location.href = "http://localhost:3000/api/v1/google/auth";
     // }
-    function ConnectToGoogleCalendar() {
-        window.location.href = "https://api.booking.inspiredliving.in/api/v1/google/auth";
-    }
+    // function ConnectToGoogleCalendar() {
+    //     window.location.href = "https://api.booking.inspiredliving.in/api/v1/google/auth";
+    // }
     useEffect(() => {
         const token = JSON.parse(localStorage.getItem("isLoggedIn")!);
         if (!token) {

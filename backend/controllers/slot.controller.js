@@ -32,8 +32,7 @@ export const getAvailableSlots = async (req, res, next) => {
         today.setHours(0, 0, 0, 0);
 
         if (selectedDate < today) {
-            return next(AppError("Past dates not allowed ⚠️", 400))
-            // return res.status(400).json({ error: "Past dates not allowed ⚠️" });
+            return next(new AppError("Past dates not allowed ⚠️", 400))
         }
 
         const doctorId = process.env.DOCTOR_ID;
@@ -67,42 +66,38 @@ export const getAvailableSlots = async (req, res, next) => {
             end: a.endTime
         }));
 
+        // getBusyTimes returns ALL busy periods across maxAdvanceDays range.
+        // We must filter to only keep events that fall on selectedDate (in IST).
+        const selectedDateStr = date.substring(0, 10); // "YYYY-MM-DD"
+        const IST_OFFSET = 5.5 * 60 * 60 * 1000;
 
         const busyTimes = await googleCalendar.getBusyTimes(req, res, next);
-        const googleBusySlots = busyTimes.map(busy => {
-            const startStr = busy.start;
-            const endStr = busy.end;
+        const normalizedGoogleBusySlots = busyTimes
+            .map(busy => {
+                // Parse the ISO string and shift to IST to get correct local date/time
+                const startUtc = new Date(busy.start);
+                const endUtc = new Date(busy.end);
 
-            // Extract HH:mm directly from the ISO string to avoid Date object timezone shifts
-            // Format is "2023-10-25T09:00:00+05:30" or similar
-            const startHour = parseInt(startStr.substring(11, 13));
-            const startMin = parseInt(startStr.substring(14, 16));
-            
-            const endHour = parseInt(endStr.substring(11, 13));
-            const endMin = parseInt(endStr.substring(14, 16));
+                const istStart = new Date(startUtc.getTime() + IST_OFFSET);
+                const istEnd = new Date(endUtc.getTime() + IST_OFFSET);
 
-            return {
-                start: startHour * 60 + startMin,
-                end: endHour * 60 + endMin,
-            };
-        }).filter(slot => {
-            if (!busyTimes[0]) return false;
-            const slotDate = new Date(busyTimes[0].start);
-            return true; // The query already limits it to selectedDate + maxAdvanceDays
-        });
+                const eventDateStr = istStart.toISOString().substring(0, 10); // "YYYY-MM-DD" in IST
 
-        const normalizedGoogleBusySlots = googleBusySlots.map(slot => {
-            return {
-                start: slot.start,
-                end: slot.end,
-            };
-        });
+                return {
+                    dateStr: eventDateStr,
+                    start: istStart.getUTCHours() * 60 + istStart.getUTCMinutes(),
+                    end: istEnd.getUTCHours() * 60 + istEnd.getUTCMinutes(),
+                };
+            })
+            // Only keep events that belong to the selected date
+            .filter(slot => slot.dateStr === selectedDateStr)
+            .map(({ start, end }) => ({ start, end }));
+
+        console.log("Unavaliable___________", normalizedGoogleBusySlots)
 
         // const unavailableSlots = [...blocks, ...appointments, ...googleBusySlots];
         const unavailableSlots = [...normalizedAppointments, ...normalizedBlocks, ...normalizedGoogleBusySlots];
 
-
-        console.log("Unavaliable___________", unavailableSlots);
 
         let availableSlots = slots.map(slot => {
             let isAvailable = true;

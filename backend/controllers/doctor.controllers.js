@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { createEvent } from '../utils/googleCalendar.js';
 import { combine } from '../utils/time.utils.js';
+import * as EmailValidator from 'email-validator';
 
 const cookieOptions = {
     maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -17,6 +18,10 @@ export const register = async(req,res,next) =>{
         const { fullName, email, password } = req.body;
         if (!fullName || !email || !password) {
             return next(new AppError(`All field are required`, 400));
+        }
+        const emailvalidate = EmailValidator.validate(email);
+        if(!emailvalidate){
+            return next(new AppError(`Invalid email`, 400));
         }
         const userExists = await prisma.doctor.findFirst({
             where: { email }
@@ -163,4 +168,109 @@ export const markBlock = async (req, res, next) => {
         return next(new AppError(error.message, 500));
     }
 
+}
+
+export const updateProfile = async (req, res, next) => {
+    try{
+        const {name,email,fee} = req.body
+        const emailvalidate = EmailValidator.validate(email);
+        if (!emailvalidate) {
+            return next(new AppError(`Invalid email 📧 🚦`, 400));
+        }
+        const doctor = await prisma.doctor.update({
+            where: { id: req.user.id },
+            data: {
+                name,
+                email,
+                fee
+            }
+        })
+        doctor.password = undefined;
+        doctor.expiryDate = undefined;
+        return res.status(200).json({
+            success: true,
+            doctor,
+            message: 'Profile updated successfully'
+        });
+    }
+    catch(error){
+        return next(new AppError(error.message, 500));
+    }
+}
+
+export const updatePassword = async(req,res,next) =>{
+    try{
+        const {currentPassword,newPassword} = req.body
+        const doctor = await prisma.doctor.findFirst({
+            where: { id: req.user.id }
+        });
+        if(!doctor){
+            return next(new AppError("Doctor not found", 404));
+        }
+        const comparePasswrod = await bcrypt.compare(currentPassword,doctor.password);
+        if(!comparePasswrod){
+            return next(new AppError("Invalid password", 400));
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const updatedDoctor = await prisma.doctor.update({
+            where: { id: req.user.id },
+            data: {
+                password: hashedPassword
+            }
+        })
+        updatedDoctor.password = undefined;
+        updatedDoctor.expiryDate = undefined;
+        return res.status(200).json({
+            success: true,
+            updatedDoctor,
+            message: 'Password updated successfully'
+        });
+    }
+    catch(error){
+        return next(new AppError(error.message, 500));
+    }
+}
+
+export const updateAdvanceSettings = async(req,res,next) =>{
+    try{
+        const {minAdvanceMinutes,maxAdvanceDays} = req.body
+        const doctor = await prisma.doctor.update({
+            where: { id: req.user.id },
+            data: {
+                minAdvanceMinutes,
+                maxAdvanceDays
+            }
+        })
+        doctor.password = undefined;
+        doctor.expiryDate = undefined;
+        return res.status(200).json({
+            success: true,
+            doctor,
+            message: 'Advance settings updated successfully'
+        });
+    }
+    catch(error){
+        return next(new AppError(error.message, 500));
+    }
+}
+
+export const disconnectGoogle = async(req,res,next) =>{
+    try{
+        const doctor = await prisma.doctor.update({
+            where: { id: req.user.id },
+            data: {
+                accessToken:null,
+                refreshToken:null,
+                
+            }
+        })
+        return res.status(200).json({
+            success: true,
+            doctor,
+            message: 'Google disconnected successfully'
+        });
+    }
+    catch(error){
+        return next(new AppError(error.message, 500));
+    }
 }

@@ -12,6 +12,6 @@ export const formatTime = (minutes: number) => {
 };
 
 export function ConnectToGoogleCalendar() {
-  // window.location.href = "https://api.booking.inspiredliving.in/api/v1/google/auth";
-  window.location.href = "http://localhost:3000/api/v1/google/auth";
+  window.location.href = "https://api.booking.inspiredliving.in/api/v1/google/auth";
+  // window.location.href = "http://localhost:3000/api/v1/google/auth";
 }

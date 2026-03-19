@@ -37,9 +37,9 @@ export const getToken = async (code) => {
 
 export const getAuthenticatedClient = async () => {
  
-  const doctorId = JSON.stringify(process.env.DOCTOR_ID);
-  const doctor = await prisma.doctor.findFirst({
-    where:{email:"samarths716@gmail.com"}
+  const doctorId = process.env.DOCTOR_ID;
+  const doctor = await prisma.doctor.findUnique({
+    where:{ id: doctorId }
   });
 
   if (!doctor) {

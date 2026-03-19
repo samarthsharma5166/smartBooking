@@ -23,6 +23,8 @@ jobs:
           envs: PRODUCTION_ENV
           script: |
             cd ~/smartBooking
+            git reset --hard HEAD
+            git clean -fd
             git pull origin main
             
             # Securely write the environment variables to the backend's .env file

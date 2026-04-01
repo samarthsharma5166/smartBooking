@@ -30,11 +30,12 @@ jobs:
             # Securely write the environment variables to the backend's .env file
             echo "$PRODUCTION_ENV" > backend/.env
             
-            # Rebuild and restart the containers (--no-cache forces full rebuild, --force-recreate applies new env)
+            # Rebuild and restart containers (--build forces rebuild, --no-cache ensures fresh build)
             cd ~/smartBooking/backend
-            docker compose build --no-cache
-            docker compose up -d --force-recreate
+            docker compose up -d --build 
             
             cd ~/smartBooking/frontend
-            docker compose build --no-cache
-            docker compose up -d --force-recreate
+            docker compose up -d --build
+            
+            # Remove dangling images to free space and avoid stale cache
+            docker image prune -f

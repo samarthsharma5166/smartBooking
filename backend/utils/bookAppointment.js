@@ -3,6 +3,16 @@ import prisma from '../db/db.js';
 import { combine } from '../utils/time.utils.js';
 import AppError from '../utils/error.utils.js';
 import { sendEmail } from '../utils/sendMail.js';
+
+// Converts minutes from midnight to readable time e.g. 660 → "11:00 AM"
+const minsToTime = (mins) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const ampm = h < 12 ? 'AM' : 'PM';
+    const hour = h % 12 === 0 ? 12 : h % 12;
+    return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+};
+
 export const bookAppointment = async (date, startTime, endTime, email, name, appointmentId) => {
     const doctorId = process.env.DOCTOR_ID;
     try {
@@ -42,6 +52,9 @@ export const bookAppointment = async (date, startTime, endTime, email, name, app
 
         const doctor = await prisma.doctor.findUnique({ where: { id: doctorId } });
 
+        const startFormatted = minsToTime(startTime);
+        const endFormatted = minsToTime(endTime);
+
         // ── Patient email ────────────────────────────────────────────────────
         const patientHtml = `
 <!DOCTYPE html>
@@ -76,7 +89,7 @@ export const bookAppointment = async (date, startTime, endTime, email, name, app
               </tr>
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">🕐 Time</td>
-                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${startTime} – ${endTime} IST</td>
+                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${startFormatted} – ${endFormatted} IST</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">🎥 Platform</td>
@@ -151,7 +164,7 @@ export const bookAppointment = async (date, startTime, endTime, email, name, app
               </tr>
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">🕐 Time</td>
-                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${startTime} – ${endTime} IST</td>
+                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${startFormatted} – ${endFormatted} IST</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">🎥 Platform</td>

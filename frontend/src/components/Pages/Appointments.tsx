@@ -1213,15 +1213,18 @@ const Appointments = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
   const handleSubmit = async () => {
-    if (!formData.date) {
-      alert("Please fill in all required fields.");
-      return;
-    }
+    const { name, email, date, sessionTypeId, timeSlot } = formData;
+    if (!date) { alert("Please select a date."); return; }
+    if (!name?.trim()) { alert("Please enter the patient name."); return; }
+    if (!email?.trim()) { alert("Please enter the patient email."); return; }
+    if (!sessionTypeId) { alert("Please select a session type."); return; }
+    if (!timeSlot || typeof timeSlot === "string") { alert("Please select a time slot."); return; }
+
     try {
       if (isEdit) {
         await axiosInstance.patch(`/bookings/appointments/${formData.id}`, formData);
       } else {
-        const { name, email, whatsapp, date, sessionTypeId, timeSlot } = formData;
+        const { whatsapp } = formData;
         const dateString = typeof date === "string" ? date : format(date, "yyyy-MM-dd");
         await axiosInstance.post("/bookings/appointments", {
           name,
@@ -1237,8 +1240,9 @@ const Appointments = () => {
       setIsOpen(false);
       setIsEdit(false);
       resetFormData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving appointment:", error);
+      alert(error?.response?.data?.message ?? "Failed to save appointment. Please try again.");
     }
   };
 
@@ -1382,8 +1386,22 @@ const Appointments = () => {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-semibold text-slate-700">
+                      Patient Name
+                    </Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={formData.name ?? ""}
+                      onChange={handleInputChange}
+                      className="h-10 rounded-lg border-slate-200 focus-visible:ring-2 focus-visible:ring-teal-400/40 focus-visible:border-teal-400"
+                      placeholder="Full name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="email" className="text-sm font-semibold text-slate-700">
-                      Email
+                      Patient Email
                     </Label>
                     <Input
                       id="email"

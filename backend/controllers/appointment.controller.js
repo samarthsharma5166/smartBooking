@@ -245,7 +245,7 @@ export const bookAppointment = async (req, res, next) => {
     } catch (err) {
         // TODO: Add logic to delete the Google Calendar event if the transaction fails
         console.error(err);
-        return next(AppError(err.message, 500))
+        return next(new AppError(err.message, 500))
         // return res.status(400).json({ error: err.message });
     }
 };

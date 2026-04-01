@@ -52,8 +52,13 @@ export const bookAppointment = async (date, startTime, endTime, email, name, app
 
         const doctor = await prisma.doctor.findUnique({ where: { id: doctorId } });
 
-        const startFormatted = minsToTime(startTime);
-        const endFormatted = minsToTime(endTime);
+        // Format date for email display
+        const dateFormatted = new Date(date).toLocaleDateString('en-IN', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+
+        const startFormatted = minsToTime(parseInt(startTime));
+        const endFormatted = minsToTime(parseInt(endTime));
 
         // ── Patient email ────────────────────────────────────────────────────
         const patientHtml = `
@@ -85,7 +90,7 @@ export const bookAppointment = async (date, startTime, endTime, email, name, app
             <table width="100%" cellpadding="12" cellspacing="0" style="background:#f9fafb;border-radius:8px;margin-bottom:28px;">
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">📅 Date</td>
-                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${date}</td>
+                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${dateFormatted}</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">🕐 Time</td>
@@ -160,7 +165,7 @@ export const bookAppointment = async (date, startTime, endTime, email, name, app
               </tr>
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">📅 Date</td>
-                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${date}</td>
+                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${dateFormatted}</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">🕐 Time</td>
@@ -197,7 +202,7 @@ export const bookAppointment = async (date, startTime, endTime, email, name, app
 </html>`;
 
         sendEmail(email, "Your Appointment is Confirmed – Inspired Living", patientHtml);
-        sendEmail(doctor.email, `New Appointment: ${name} on ${date}`, doctorHtml);
+        sendEmail(doctor.email, `New Appointment: ${name} on ${dateFormatted}`, doctorHtml);
         return
     } catch (err) {
         // TODO: Add logic to delete the Google Calendar event if the transaction fails

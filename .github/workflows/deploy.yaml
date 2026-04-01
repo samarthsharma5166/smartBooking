@@ -23,19 +23,27 @@ jobs:
           envs: PRODUCTION_ENV
           script: |
             cd ~/smartBooking
-            git reset --hard HEAD
-            git clean -fd
-            git pull origin main
+
+            # Pull latest code
+            git fetch origin main
+            git reset --hard origin/main
             
+            # Show latest commit to confirm new code was pulled
+            echo "=== Latest commit ==="
+            git log --oneline -3
+
             # Securely write the environment variables to the backend's .env file
             echo "$PRODUCTION_ENV" > backend/.env
-            
-            # Rebuild and restart containers (--build forces rebuild, --no-cache ensures fresh build)
+
+            # Rebuild and restart backend (--force-recreate ensures new image is used)
             cd ~/smartBooking/backend
-            docker compose up -d --build 
-            
+            docker compose up -d --build --force-recreate
+
+            # Rebuild and restart frontend
             cd ~/smartBooking/frontend
-            docker compose up -d --build
-            
-            # Remove dangling images to free space and avoid stale cache
+            docker compose up -d --build --force-recreate
+
+            # Clean up dangling images
             docker image prune -f
+            
+            echo "=== Deployment complete ==="

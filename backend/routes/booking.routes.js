@@ -9,7 +9,7 @@ const router = express.Router();
 
 
 router.get("/slots", getAvailableSlots);
-router.post("/appointments", bookAppointment);
+router.post("/appointments/create", bookAppointment);
 router.get("/appointments", getAppointments);
 router.put("/appointments/:id", updateAppointment);
 router.delete("/appointments/:id", deleteAppointment);

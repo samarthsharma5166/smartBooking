@@ -3,9 +3,12 @@ import prisma from '../db/db.js';
 import { combine } from '../utils/time.utils.js';
 import AppError from '../utils/error.utils.js';
 import { sendEmail } from '../utils/sendMail.js';
+import { minsToTime } from '../utils/bookAppointment.js';
 
 export const bookAppointment = async (req, res, next) => {
     const { date, startTime, endTime, email, name, sessionTypeId } = req.body;
+
+    console.log(date,startTime,endTime,email,name,sessionTypeId);
     const doctorId = process.env.DOCTOR_ID;
 
     try {
@@ -78,11 +81,14 @@ export const bookAppointment = async (req, res, next) => {
             // → "2024-01-15T11:10:00+05:30" — Google reads this perfectly
         };
 
+  
 
         const event = await googleCalendar.createEvent(
             `Appointment with ${name}`,
-            formatISTISO(date, startTime),   // pass raw strings, not Date objects
-            formatISTISO(date, endTime)
+            // formatISTISO(date, startTime),   // pass raw strings, not Date objects
+            // formatISTISO(date, endTime)
+          startDateTime,
+          endDateTime
         );
         const updatedAppointment = await prisma.appointment.update({
             where: {
@@ -98,8 +104,15 @@ export const bookAppointment = async (req, res, next) => {
 
         const doctor = await prisma.doctor.findUnique({ where: { id: doctorId } });
 
-        // ── Patient email ────────────────────────────────────────────────────
-        const patientHtml = `
+      const dateFormatted = new Date(date).toLocaleDateString('en-IN', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+
+      const startFormatted = minsToTime(parseInt(startTime));
+      const endFormatted = minsToTime(parseInt(endTime));
+
+      // ── Patient email ────────────────────────────────────────────────────
+      const patientHtml = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -128,11 +141,11 @@ export const bookAppointment = async (req, res, next) => {
             <table width="100%" cellpadding="12" cellspacing="0" style="background:#f9fafb;border-radius:8px;margin-bottom:28px;">
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">📅 Date</td>
-                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${date}</td>
+                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${dateFormatted}</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">🕐 Time</td>
-                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${startTime} – ${endTime} IST</td>
+                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${startFormatted} – ${endFormatted} IST</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">🎥 Platform</td>
@@ -168,8 +181,8 @@ export const bookAppointment = async (req, res, next) => {
 </body>
 </html>`;
 
-        // ── Doctor email ─────────────────────────────────────────────────────
-        const doctorHtml = `
+      // ── Doctor email ─────────────────────────────────────────────────────
+      const doctorHtml = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -203,11 +216,11 @@ export const bookAppointment = async (req, res, next) => {
               </tr>
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">📅 Date</td>
-                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${date}</td>
+                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${dateFormatted}</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">🕐 Time</td>
-                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${startTime} – ${endTime} IST</td>
+                <td style="font-size:15px;color:#111827;font-weight:600;border-bottom:1px solid #e5e7eb;">${startFormatted} – ${endFormatted} IST</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">🎥 Platform</td>

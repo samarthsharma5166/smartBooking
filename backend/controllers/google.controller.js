@@ -8,7 +8,7 @@ export const getAuthUrl = (req, res) => {
   res.redirect(url);
 };
 
-export const handleCallback = async (req, res) => {
+export const handleCallback = async (req, res, next) => {
   const code = req.query.code;
   try {
     const tokens = await googleCalendar.getToken(code);

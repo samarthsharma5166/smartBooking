@@ -5,7 +5,7 @@ import AppError from '../utils/error.utils.js';
 import { sendEmail } from '../utils/sendMail.js';
 
 // Converts minutes from midnight to readable time e.g. 660 → "11:00 AM"
-const minsToTime = (mins) => {
+export const minsToTime = (mins) => {
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     const ampm = h < 12 ? 'AM' : 'PM';

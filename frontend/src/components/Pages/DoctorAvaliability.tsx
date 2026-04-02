@@ -660,12 +660,13 @@ export function AlertModel({ onBlocked }: { onBlocked?: () => void }) {
           onEscapeKeyDown={handleClose}
           onInteractOutside={handleClose}
           className="
-            fixed z-50 overflow-hidden bg-white outline-none
+            fixed z-50 bg-white outline-none flex flex-col
             data-[state=open]:animate-in data-[state=closed]:animate-out
             data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0
 
             /* ── Mobile: bottom sheet ── */
             bottom-0 left-0 right-0 w-full rounded-t-3xl
+            max-h-[90dvh] overflow-hidden
             data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom
             duration-300
 
@@ -673,6 +674,7 @@ export function AlertModel({ onBlocked }: { onBlocked?: () => void }) {
             sm:bottom-auto sm:left-1/2 sm:right-auto sm:top-1/2
             sm:-translate-x-1/2 sm:-translate-y-1/2
             sm:w-full sm:max-w-sm sm:rounded-3xl
+            sm:max-h-[92dvh]
             sm:data-[state=closed]:slide-out-to-left-1/2
             sm:data-[state=closed]:slide-out-to-top-[48%]
             sm:data-[state=open]:slide-in-from-left-1/2
@@ -721,12 +723,13 @@ export function AlertModel({ onBlocked }: { onBlocked?: () => void }) {
             </div>
           </div>
 
-          {/* Body */}
-          <div className="px-5 py-5 sm:px-6 bg-white">
+          {/* Body — scrollable so tall content never escapes the modal */}
+          <div className="px-5 py-5 sm:px-6 bg-white overflow-y-auto flex-1 min-h-0">
             {step === 1 && (
               <div className="space-y-4">
                 <p className="text-xs text-slate-400 font-medium">Select the date you want to mark as unavailable.</p>
-                <div className="flex justify-center">
+                {/* overflow-x-auto prevents the calendar from causing horizontal scroll on tiny screens */}
+                <div className="flex justify-center overflow-x-auto">
                   <Calendar
                     mode="single"
                     selected={selectedDate}
@@ -756,7 +759,8 @@ export function AlertModel({ onBlocked }: { onBlocked?: () => void }) {
                 </div>
                 <p className="text-xs text-slate-400 font-medium">No sessions will be scheduled during this window.</p>
 
-                <div className="grid grid-cols-2 gap-3">
+                {/* Stack on very small screens, side by side from xs up */}
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3">
                   {[
                     { label: "Start", value: startTime, onChange: setStartTime },
                     { label: "End", value: endTime, onChange: setEndTime },
@@ -796,19 +800,19 @@ export function AlertModel({ onBlocked }: { onBlocked?: () => void }) {
             )}
           </div>
 
-          {/* Footer */}
-          <div className="flex justify-between items-center px-5 py-4 sm:px-6 bg-slate-50 border-t border-slate-100">
+          {/* Footer — shrink-0 keeps it always visible even when body content scrolls */}
+          <div className="shrink-0 flex justify-between items-center px-5 py-4 sm:px-6 bg-slate-50 border-t border-slate-100">
             {step === 1 ? (
               <button
                 onClick={handleClose}
-                className="h-10 px-4 text-sm rounded-xl text-slate-400 hover:text-slate-700 border border-slate-200 bg-white hover:bg-slate-50 transition-all"
+                className="min-w-[80px] h-10 px-4 text-sm rounded-xl text-slate-400 hover:text-slate-700 border border-slate-200 bg-white hover:bg-slate-50 transition-all"
               >
                 Cancel
               </button>
             ) : (
               <button
                 onClick={() => setStep((s) => s - 1)}
-                className="flex items-center gap-1.5 h-10 px-4 text-sm rounded-xl text-slate-400 hover:text-slate-700 border border-slate-200 bg-white hover:bg-slate-50 transition-all"
+                className="min-w-[80px] flex items-center gap-1.5 h-10 px-4 text-sm rounded-xl text-slate-400 hover:text-slate-700 border border-slate-200 bg-white hover:bg-slate-50 transition-all"
               >
                 <ChevronLeft className="w-4 h-4" /> Back
               </button>
@@ -818,7 +822,7 @@ export function AlertModel({ onBlocked }: { onBlocked?: () => void }) {
               <button
                 onClick={() => setStep((s) => s + 1)}
                 disabled={!isStep1Valid}
-                className="flex items-center gap-2 px-5 h-10 text-sm font-bold rounded-xl text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0"
+                className="min-w-[120px] flex items-center justify-center gap-2 px-5 h-10 text-sm font-bold rounded-xl text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0"
                 style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)", boxShadow: isStep1Valid ? "0 4px 14px rgba(109,40,217,0.35)" : "none" }}
               >
                 Continue <ChevronRight className="w-4 h-4" />
@@ -827,7 +831,7 @@ export function AlertModel({ onBlocked }: { onBlocked?: () => void }) {
               <button
                 onClick={handleSubmit}
                 disabled={!isStep2Valid || submitting}
-                className="flex items-center gap-2 px-5 h-10 text-sm font-bold rounded-xl text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0"
+                className="min-w-[130px] flex items-center justify-center gap-2 px-5 h-10 text-sm font-bold rounded-xl text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0"
                 style={{ background: "linear-gradient(135deg, #f43f5e, #e11d48)", boxShadow: isStep2Valid ? "0 4px 14px rgba(244,63,94,0.35)" : "none" }}
               >
                 {submitting ? (

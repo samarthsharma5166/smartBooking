@@ -1226,7 +1226,7 @@ const Appointments = () => {
       } else {
         const { whatsapp } = formData;
         const dateString = typeof date === "string" ? date : format(date, "yyyy-MM-dd");
-        await axiosInstance.post("/bookings/appointments", {
+        await axiosInstance.post("/bookings/appointments/create", {
           name,
           email,
           whatsapp,
